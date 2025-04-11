@@ -1,5 +1,3 @@
--- Обновлённый скрипт KB — сохраняет конфиг прямо в config\crate_log.ini
-
 local samp = require("samp.events")
 local imgui = require('imgui')
 local encoding = require("encoding")
@@ -7,7 +5,6 @@ local inicfg = require("inicfg")
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
 
--- Конфиг прямо в папке config
 local configName = "crate_log"
 local defaultData = {
     log = {
@@ -126,7 +123,6 @@ end
 function imgui.OnDrawFrame()
     if windowMain.v then
         local sw, sh = getScreenResolution()
-
         imgui.SetNextWindowPos(imgui.ImVec2(sw - 320, sh / 4), imgui.Cond.Always)
 
         imgui.Begin(u8('Лог ящиков'), windowMain,
@@ -167,11 +163,20 @@ function imgui.OnDrawFrame()
 
         imgui.Separator()
         if imgui.Button(u8("Очистить лог"), imgui.ImVec2(280, 30)) then
+            -- Удаляем все динамические поля из config.log
+            for k in pairs(config.log) do
+                if not k:find('^show') and k ~= 'totalMoney' and k ~= 'myEarnings' and k ~= 'myAzCoins' then
+                    config.log[k] = nil
+                end
+            end
+
+            -- Очищаем локальные переменные
             prinesli = {}
             lootboxes = {}
             totalMoney = 0
             myEarnings = 0
             myAzCoins = 0
+
             saveData()
         end
 
@@ -215,6 +220,7 @@ function main()
     sampAddChatMessage('[Хрюглевское КБ] {03B12C}Скрипт загружен! {ffffff}/kb для включения лога', 0x7614C6)
 
     sampRegisterChatCommand('kb', function()
+        loadData() -- тихая перезагрузка данных
         windowMain.v = not windowMain.v
         windowSettings.v = false
     end)
